@@ -33,6 +33,106 @@ The client nodes use the **Ricart-Agrawala algorithm** to coordinate write acces
 
 -----
 
+## Running with Docker (Local Testing)
+
+### Prerequisites
+- Docker
+- Docker Compose
+
+### Step-by-Step Docker Testing Guide
+
+1. **Start the Application:**
+   ```bash
+   # Build and start all containers in detached mode
+   docker-compose up -d --build
+   ```
+
+2. **Connect to Chat Clients:**
+   ```bash
+   # Connect to Joel's terminal
+   docker attach joel
+
+   # In a new terminal, connect to Jina's terminal
+   docker attach jina
+   ```
+
+3. **Testing Commands:**
+   
+   In Joel's terminal:
+   ```bash
+   # Basic post
+   post Hello from Joel!
+
+   # Test DME by posting a longer message
+   post This is Joel testing the mutual exclusion...
+   ```
+
+   In Jina's terminal:
+   ```bash
+   # View the chat log
+   view
+
+   # Post a reply
+   post Hello Joel, this is Jina!
+   ```
+
+4. **Testing Mutual Exclusion:**
+   ```bash
+   # In Joel's terminal (type but don't press Enter):
+   post Testing concurrent access 1...
+
+   # In Jina's terminal (type but don't press Enter):
+   post Testing concurrent access 2...
+
+   # Press Enter in both terminals simultaneously
+   ```
+
+5. **View Logs:**
+   ```bash
+   # View server logs
+   docker logs server
+
+   # View Joel's logs
+   docker logs joel
+
+   # View Jina's logs
+   docker logs jina
+
+   # Follow logs in real-time
+   docker logs -f server
+   ```
+
+6. **Check Chat History:**
+   ```bash
+   # Show the chat log file
+   docker exec server cat /app/chat_log.txt
+   ```
+
+7. **Clean Up:**
+   ```bash
+   # Stop all containers
+   docker-compose down
+
+   # Remove all stopped containers and networks
+   docker-compose down --volumes
+
+   # Clean up unused images
+   docker system prune -f
+   ```
+
+### Important Notes:
+- Use Ctrl+P, Ctrl+Q to detach from a container without stopping it
+- Use Ctrl+C to stop the containers when running in foreground mode
+- The chat log and application logs are persisted in the project directory
+- If a container becomes unresponsive, you can restart it:
+  ```bash
+  docker-compose restart joel    # Restart Joel's container
+  docker-compose restart jina    # Restart Jina's container
+  docker-compose restart server  # Restart the server container
+  ```
+  
+---
+
 ## Setup and Execution on 3 Servers
 
 Follow these steps to deploy the application on three separate servers (e.g., AWS EC2 instances).
@@ -136,7 +236,7 @@ SSH into each machine in its own terminal window.
 
 ## How to Test
 
-Your 3-node system is now running\!
+Your 3-node system is now running!
 
 1.  **Basic Post/View:**
 
