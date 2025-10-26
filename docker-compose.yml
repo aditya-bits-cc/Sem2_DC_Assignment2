@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  # Node 1: The File Server
+  server:
+    build: .  # Build from the Dockerfile in this directory
+    container_name: server
+    # Mount the entire project directory into the container's /app directory
+    # This lets the container see your .py files and write log files back to your PC
+    volumes:
+      - .:/app
+    # The command to run the server
+    command: python3 file_server.py
+    # Expose the server's port (optional, but good for debugging)
+    ports:
+      - "50000:50000"
+
+  # Node 2: User "Joel"
+  joel:
+    build: .
+    container_name: joel
+    volumes:
+      - .:/app
+    # The 'server:50000' and 'jina:50002' hostnames
+    # are automatically resolved by Docker's internal DNS.
+    command: python3 chat_app.py Joel 50001 --server server:50000 --peer Jina:jina:50002
+    # We need an interactive terminal (stdin_open/tty)
+    stdin_open: true
+    tty: true
+    # Wait for the server to be running before starting
+    depends_on:
+      - server
+
+  # Node 3: User "Jina"
+  jina:
+    build: .
+    container_name: jina
+    volumes:
+      - .:/app
+    command: python3 chat_app.py Jina 50002 --server server:50000 --peer Joel:joel:50001
+    stdin_open: true
+    tty: true
+    depends_on:
+      - server
