@@ -1,172 +1,157 @@
-# Distributed Chat Application with Ricart-Agrawala Mutual Exclusion
+Here is the updated `README.md` file.
 
-This is a distributed chat application implementing the Ricart-Agrawala algorithm for distributed mutual exclusion. The system consists of multiple nodes that can post messages to a shared chat log while maintaining mutual exclusion for write operations.
+The "Firewall Configuration" section has been modified as you requested to open the ports generally, along with a security warning about this approach.
 
-## Components
+-----
 
-1. **DME Middleware** (`dme_middleware.py`)
-   - Implements Ricart-Agrawala distributed mutual exclusion algorithm
-   - Handles peer-to-peer communication for mutual exclusion
-   - Provides request_cs() and release_cs() APIs
+# 3-Node Distributed Chat Application
 
-2. **Chat Application** (`chat_app.py`)
-   - Client application that users interact with
-   - Integrates with DME middleware for write operations
-   - Provides view and post functionality
+This project implements a simple distributed chat room application using a 3-node system. It demonstrates a distributed mutual exclusion (DME) algorithm to ensure that only one user can write to the shared chat log at a time.
 
-3. **File Server** (`file_server.py`)
-   - Central server that manages the shared chat log
-   - Handles concurrent read/write requests
-   - Maintains persistence of chat messages
+  * **Node 1 (Server):** A simple file server that hosts the shared `chat_log.txt` file.
+  * **Node 2 (Client):** A user-facing chat application that can `view` or `post` messages.
+  * **Node 3 (Client):** Another user-facing chat application.
 
-## Setup and Running
+The client nodes use the **Ricart-Agrawala algorithm** to coordinate write access (`post`) among themselves, ensuring data integrity without a central lock manager.
 
-### Prerequisites
-- Python 3.7 or higher
-- Network connectivity between nodes
-- All nodes should be able to reach each other and the file server
+## Files in this Project
 
-### Running the File Server
+1.  `file_server.py`
 
-1. Start the file server first:
-```bash
-python file_server.py
-```
-The server will listen on port 50000 by default.
+      * **Role:** The "Resource Server" (Node 1).
+      * **Function:** Listens for `VIEW` and `POST` commands. It reads from or appends to the `chat_log.txt` file. It has no DME logic.
 
-### Running Chat Nodes
+2.  `dme_middleware.py`
 
-For this example, we'll set up three nodes: node1, node2, and node3. Each node needs:
-- A unique node ID
-- A unique port for DME communication
-- Information about its peers
-- File server address
+      * **Role:** The "Distributed Mutual Exclusion Module."
+      * **Function:** This module is imported by `chat_app.py`. It contains the `RicartAgrawalaMutex` class, which handles all the complex DME logic (logical clocks, `REQUEST`/`REPLY` messages, and state management).
 
-#### Node 1 (Example IP: 192.168.1.101)
-```bash
-python chat_app.py node1 50001 --server 192.168.1.100:50000 --peer "node2:192.168.1.102:50002" --peer "node3:192.168.1.103:50003"
-```
+3.  `chat_app.py`
 
-#### Node 2 (Example IP: 192.168.1.102)
-```bash
-python chat_app.py node2 50002 --server 192.168.1.100:50000 --peer "node1:192.168.1.101:50001" --peer "node3:192.168.1.103:50003"
-```
+      * **Role:** The "Collaboration Application" (Nodes 2 & 3).
+      * **Function:** This is the script users run. It provides the text-based UI for `view` and `post` commands. It calls the DME middleware (`request_cs()` and `release_cs()`) before executing a `post` command to ensure exclusive access.
 
-#### Node 3 (Example IP: 192.168.1.103)
-```bash
-python chat_app.py node3 50003 --server 192.168.1.100:50000 --peer "node1:192.168.1.101:50001" --peer "node2:192.168.1.102:50002"
-```
+-----
 
-### Local Testing Setup
-For testing on a single machine, use localhost (127.0.0.1) and different ports:
+## Setup and Execution on 3 Servers
 
-```bash
-# Terminal 1 - File Server
-python file_server.py
+Follow these steps to deploy the application on three separate servers (e.g., AWS EC2 instances).
 
-# Terminal 2 - Node 1
-python chat_app.py node1 50001 --server 127.0.0.1:50000 --peer "node2:127.0.0.1:50002" --peer "node3:127.0.0.1:50003"
+### Example Node Configuration
 
-# Terminal 3 - Node 2
-python chat_app.py node2 50002 --server 127.0.0.1:50000 --peer "node1:127.0.0.1:50001" --peer "node3:127.0.0.1:50003"
+We will assume the following Private IP addresses for this guide. **Replace them with your own IPs. by checking ip addr show command**
 
-# Terminal 4 - Node 3
-python chat_app.py node3 50003 --server 127.0.0.1:50000 --peer "node1:127.0.0.1:50001" --peer "node2:127.0.0.1:50002"
-```
+  * **Node 1 (Server):** `10.0.1.10`
+  * **Node 2 (Client Joel):** `10.0.1.20`
+  * **Node 3 (Client Jina):** `10.0.1.30`
 
-## Usage
+### 1\. Firewall Configuration (General Access)
 
-### Available Commands
-1. `view` - View the current chat log (non-exclusive operation)
-2. `post <message>` - Post a new message (uses mutual exclusion)
-3. `exit` - Exit the application
+⚠️ **Security Warning:** The following commands will open your ports to the **entire internet (`0.0.0.0/0`)**. This is simple for quick testing but is **NOT secure** for a production environment. Anyone on the internet will be able to send data to your application. For a secure setup, you should restrict access to the specific IPs of your other nodes (as shown in the previous IP-specific example).
 
-### Test Cases
+#### On Ubuntu (using `ufw`)
 
-#### Test Case 1: Basic Functionality
-1. Start all nodes
-2. From node1: `post "Hello from node1"`
-3. From node2: `view` (should see node1's message)
-4. From node3: `post "Hello from node3"`
-5. From node1: `view` (should see both messages)
+Run these commands on each respective node:
 
-Expected Result:
-- All messages should appear in order
-- Each node should see the same chat log
+  * **On Node 1 (Server):**
 
-#### Test Case 2: Concurrent Posts
-1. Try to post from multiple nodes simultaneously:
-   - Node1: `post "Message 1 from node1"`
-   - Node2: `post "Message 2 from node2"` (immediately after node1)
-   - Node3: `post "Message 3 from node3"` (immediately after node2)
+    ```bash
+    sudo ufw allow 50000/tcp
+    ```
 
-Expected Result:
-- Messages should appear in some sequential order
-- No messages should be lost or corrupted
-- The 2-second artificial delay helps observe the mutual exclusion
+  * **On Node 2 (Client Joel):**
 
-#### Test Case 3: Node Failure Recovery
-1. Start all nodes
-2. Post some messages from each node
-3. Stop node2 (Ctrl+C)
-4. Continue posting from node1 and node3
-5. Restart node2 with the same configuration
+    ```bash
+    sudo ufw allow 50001/tcp
+    ```
 
-Expected Result:
-- System should continue functioning for remaining nodes
-- Restarted node should rejoin successfully
-- All nodes should maintain consistency
+  * **On Node 3 (Client Jina):**
 
-#### Test Case 4: Read During Write
-1. From node1: Start posting a long message
-2. While node1 is waiting for mutex:
-   - From node2: Execute `view` command several times
-   - From node3: Try to post another message
+    ```bash
+    sudo ufw allow 50002/tcp
+    ```
 
-Expected Result:
-- View commands should work without blocking
-- Post commands should be serialized
-- No corruption of the chat log
+  * **After running the command(s) for your node, enable `ufw`:**
 
-## Logging and Debugging
+    ```bash
+    sudo ufw enable
+    sudo ufw status
+    ```
 
-- Each component maintains its own log file:
-  - `chat_app.log` - Chat application logs
-  - `file_server.log` - File server logs
-  - `chat_log.txt` - The actual chat messages
+#### On CentOS (using `firewalld`)
 
-- Log files contain detailed information about:
-  - DME algorithm operation
-  - Message exchanges
-  - Critical section entry/exit
-  - Errors and exceptions
+Run these commands on each respective node:
 
-## Implementation Details
+  * **On Node 1 (Server):**
+    ```bash
+    sudo firewall-cmd --zone=public --add-port=50000/tcp --permanent
+    ```
+  * **On Node 2 (Client Joel):**
+    ```bash
+    sudo firewall-cmd --zone=public --add-port=50001/tcp --permanent
+    ```
+  * **On Node 3 (Client Jina):**
+    ```bash
+    sudo firewall-cmd --zone=public --add-port=50002/tcp --permanent
+    ```
+  * **After running the command(s) for your node, reload `firewalld`:**
+    ```bash
+    sudo firewall-cmd --reload
+    sudo firewall-cmd --list-all
+    ```
 
-### Ricart-Agrawala Algorithm Implementation
-- Uses logical clocks for message ordering
-- Maintains FIFO message ordering
-- Implements proper thread synchronization
-- Handles network failures gracefully
+### 2\. Copy Files
 
-### Mutual Exclusion Properties
-1. Safety: Only one node can be in the critical section at a time
-2. Liveness: Requests for critical section eventually succeed
-3. Ordering: Requests are served in the order of their timestamps
+  * **Node 1:** Copy `file_server.py`.
+  * **Node 2 & 3:** Copy `chat_app.py` and `dme_middleware.py`.
 
-## Troubleshooting
+### 3\. Run the Application
 
-1. **Connection Refused Errors**
-   - Check if all nodes are running
-   - Verify IP addresses and ports
-   - Ensure no firewall blocking
+SSH into each machine in its own terminal window.
 
-2. **Messages Not Appearing**
-   - Check file server logs
-   - Verify network connectivity
-   - Check chat_log.txt permissions
+  * **Terminal 1 (On Node 1 - Server):**
 
-3. **Node Not Responding**
-   - Check node's log file
-   - Verify peer configuration
-   - Restart the node if needed
+    ```bash
+    python3 file_server.py
+    # Output: File server listening on 0.0.0.0:50000...
+    ```
+
+  * **Terminal 2 (On Node 2 - Client Joel):**
+
+    ```bash
+    python3 chat_app.py Joel 50001 --server 10.0.1.10:50000 --peer Jina:10.0.1.30:50002
+    # Output: Welcome, Joel.
+    # Output: Joel_machine>
+    ```
+
+  * **Terminal 3 (On Node 3 - Client Jina):**
+
+    ```bash
+    python3 chat_app.py Jina 50002 --server 10.0.1.10:50000 --peer Joel:10.0.1.20:50001
+    # Output: Welcome, Jina.
+    # Output: Jina_machine>
+    ```
+
+-----
+
+## How to Test
+
+Your 3-node system is now running\!
+
+1.  **Basic Post/View:**
+
+      * In Joel's terminal, type: `post Hello from Joel!`
+      * In Jina's terminal, type: `view`
+      * You should see Joel's message.
+
+2.  **Test the DME (Race Condition):**
+
+      * In Joel's terminal, type: `post This is Joel testing the lock!` (Don't press Enter yet).
+      * In Jina's terminal, type: `post Jina trying to post at the same time!` (Don't press Enter yet).
+      * Try to press **Enter** on both terminals at the exact same time.
+      * **Observe:** You will see one user (e.g., Jina) print `Waiting for write access (DME)...` while the other user (Joel) acquires the lock, posts, and releases. As soon as Joel releases, Jina's terminal will automatically acquire the lock and post.
+
+3.  **Check Logs:**
+
+      * On Node 1, you can `cat chat_log.txt` to see the perfectly sequential, uncorrupted messages.
+      * On Nodes 2 and 3, you can check `chat_app.log` to see the DME logs, including the crucial `DEFERRING reply to...` message, which is proof the algorithm worked.
