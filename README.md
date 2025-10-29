@@ -1,6 +1,13 @@
-Here is the updated `README.md` file.
+# Group-11 Distributed Computing Assignment 2
 
-The "Firewall Configuration" section has been modified as you requested to open the ports generally, along with a security warning about this approach.
+### Students participating
+
+**2024mt03611** -> Jambhalikar Aditya Ravindra <br>
+**2024mt03538** -> Spandan Chakravarty <br>
+**2024mt03617** -> Ajay Kumar <br>
+**2024mt03505** -> Chetan P <br>
+**2024mt03586** -> Prakash Vishwakarma
+
 
 -----
 
