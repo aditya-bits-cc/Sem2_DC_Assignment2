@@ -89,8 +89,8 @@ def handle_post(text, dme_mutex):
     print(f"Server response: {response}")
     
     # Simulate some work to make conflicts more likely during testing
-    print("Holding lock for 2 seconds to simulate work...")
-    time.sleep(2) 
+    print("Holding lock for 5 seconds to simulate work...")
+    time.sleep(5) 
     
     log.info("APP: Work complete. Releasing Critical Section.")
     
