@@ -1,9 +1,3 @@
-Here is the updated `README.md` file.
-
-The "Firewall Configuration" section has been modified as you requested to open the ports generally, along with a security warning about this approach.
-
------
-
 # 3-Node Distributed Chat Application
 
 This project implements a simple distributed chat room application using a 3-node system. It demonstrates a distributed mutual exclusion (DME) algorithm to ensure that only one user can write to the shared chat log at a time.
